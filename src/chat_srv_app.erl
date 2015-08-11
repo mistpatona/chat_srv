@@ -2,7 +2,7 @@
 %% @doc @todo Add description to chat_sup.
 
 
--module(chat_app). %also serves as chat_sup -- main supervisor
+-module(chat_srv_app). %also serves as chat_sup -- main supervisor
 -behaviour(supervisor).  
 -behaviour(application).
 -export([init/1]).
