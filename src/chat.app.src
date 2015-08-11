@@ -1,0 +1,13 @@
+{application, chat,
+ [
+  {description, "Chat server, using OTP"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { chat_app, []}},
+  {env, []},
+  {modules,[chat_client]}
+ ]}.
