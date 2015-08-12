@@ -20,10 +20,10 @@ start_link() ->
 	gen_server:start_link({local,?MODULE},?MODULE, [], []).
 
 register(P,Pid,Login) ->
-	gen_server:cast(P,{register,Pid,Login}).
+	gen_server:call(P,{register,Pid,Login}).
 
 unregister(P,Pid) ->
-	gen_server:cast(P,{unregister,Pid}).
+	gen_server:call(P,{unregister,Pid}).
 
 get_pids_by_name(P,Login) ->
 	L = get_online_list(P),
@@ -74,6 +74,18 @@ init([]) ->
 	Timeout :: non_neg_integer() | infinity,
 	Reason :: term().
 %% ====================================================================
+handle_call({register,Pid,Login},_From,#state{online=Lonline,all=Sall}=State) ->
+	io:format("chat_online: registering ~p from ~p~n",[Login,Pid]),
+	{reply,ok,State#state{	online= [{Pid,Login}|Lonline],
+							all   = sets:add_element(Login,Sall) 
+				   		}};
+
+handle_call({unregister,Pid},_From,#state{online=L}=State) ->
+	io:format("chat_online: unregistering ~p~n",[Pid]),
+	{reply,ok,State#state{online=
+							 lists:filter(fun({X,_})-> X=/=Pid end,L)
+						}};
+
 handle_call(get_online_list, _From, #state{online=L}=State) ->
 	{reply, L, State};
 
@@ -100,16 +112,16 @@ handle_call(_Request, _From, State) ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 
-handle_cast({register,Pid,Login},#state{online=Lonline,all=Sall}=State) ->
-	{noreply,State#state{	online= [{Pid,Login}|Lonline],
-							all   = sets:add_element(Login,Sall) 
-				   		}};
-
-handle_cast({unregister,Pid},#state{online=L}=State) ->
-	io:format("chat_online: unregistering ~p~n",[Pid]),
-	{noreply,State#state{online=
-							 lists:filter(fun({X,_})-> X=/=Pid end,L)
-						}};
+%% handle_cast({register,Pid,Login},#state{online=Lonline,all=Sall}=State) ->
+%% 	{noreply,State#state{	online= [{Pid,Login}|Lonline],
+%% 							all   = sets:add_element(Login,Sall) 
+%% 				   		}};
+%% 
+%% handle_cast({unregister,Pid},#state{online=L}=State) ->
+%% 	io:format("chat_online: unregistering ~p~n",[Pid]),
+%% 	{noreply,State#state{online=
+%% 							 lists:filter(fun({X,_})-> X=/=Pid end,L)
+%% 						}};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.

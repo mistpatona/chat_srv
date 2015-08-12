@@ -19,17 +19,16 @@ start_link(Conn,Login) ->
 	gen_server:start_link(?MODULE, [Conn,Login], []).
 
 logout(Pid) ->
-	gen_server:cast(Pid,logout).
+	gen_server:call(Pid,logout).
 
 notify(Pid,From,_To, Body) ->
 	Conn = get_client(Pid),
 	chat_client:notify_message(Conn,From,Body).
 
 send(Pid,To,Body) ->
-	gen_server:cast(Pid,{send,To,Body}).
+	gen_server:call(Pid,{send,To,Body}).
 
 %lists of usernames ({online,all})
-
 get_users(Pid) ->
 	gen_server:call(Pid,get_users).
 
@@ -95,6 +94,16 @@ handle_call({get_history,Friend}, _From, State) ->
 	R=chat_storage:get_history(chat_storage, Login, Friend),
 	{reply, R, State};
 
+handle_call(logout, _From, State) ->
+	io:format("chat_cli: logout ~p~n",[State#state.login]),
+	Reply=chat_online:unregister(chat_online, self()),
+	{stop,normal,Reply,State};
+
+handle_call({send,To,Body},_From,State) ->
+ 	Login = State#state.login,
+ 	R = chat_msg_srv:send(Login,To,Body),
+	{reply, R, State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -111,15 +120,15 @@ handle_call(_Request, _From, State) ->
 	NewState :: term(),
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
-handle_cast(logout,State) ->
-	io:format("chat_cli: logout ~p~n",[State#state.login]),
-	chat_online:unregister(chat_online, self()),
-	{stop,normal,State};
+%% handle_cast(logout,State) ->
+%% 	io:format("chat_cli: logout ~p~n",[State#state.login]),
+%% 	chat_online:unregister(chat_online, self()),
+%% 	{stop,normal,State};
 
-handle_cast({send,To,Body},State) ->
- 	Login = State#state.login,
- 	chat_msg_srv:send(Login,To,Body),
-	{noreply, State};
+%% handle_cast({send,To,Body},State) ->
+%%  	Login = State#state.login,
+%%  	chat_msg_srv:send(Login,To,Body),
+%% 	{noreply, State};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.

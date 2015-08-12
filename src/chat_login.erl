@@ -18,8 +18,7 @@ start_link() ->
 
 login(Pid_to_Notify,Login) ->
 	gen_server:call({global,?MODULE},{login,Pid_to_Notify, Login}).
-	%chat_cli_sup:add_client(Pid_to_Notify, Login).
-
+	
 
 %% ====================================================================
 %% Behavioural functions

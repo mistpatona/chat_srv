@@ -17,9 +17,10 @@ start_link() ->
 	gen_server:start_link({local,?MODULE},?MODULE, [], []).
 
 send(From,To,Body) ->
-	chat_storage:add_message(chat_storage, From, To, Body),
+	R=chat_storage:add_message(chat_storage, From, To, Body),
 	Pids = chat_online:get_pids_by_name(chat_online, To),
-	[ chat_cli:notify(Pid, From, To, Body) || Pid <- Pids].
+	[ chat_cli:notify(Pid, From, To, Body) || Pid <- Pids],
+	R.
 	
 
 %% ====================================================================

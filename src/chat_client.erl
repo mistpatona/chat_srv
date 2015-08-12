@@ -11,6 +11,7 @@
 %% ====================================================================
 -export([login/1,write/3,logout/1,history/2,users/1]).
 -export([notify_message/3,start_link/0]).
+-export([users_bare/1]).
 
 -export([get_pid/1]).
 
@@ -43,10 +44,11 @@ write(Pid,To,Body) ->
 history(Pid,Friend) ->
 	P=get_pid(Pid),
 	H=chat_cli:get_history(P,Friend),
-	[lists:flatten(io_lib:format(" ~p->~p: ~p",[F,T,B]))
+	[lists:flatten(io_lib:format(" ~s->~s: ~s",[F,T,B]))
 		%("m: " ++ F ++ "->" ++ T ++ ": " ++ B)
 		|| {_Msg,F,T,B} <- H ].
 
+%returns list of users with online ones marked by an asterisk (*)
 users(Pid) ->
 	P=get_pid(Pid),
 	{Onl,All}=chat_cli:get_users(P),
@@ -57,7 +59,12 @@ users(Pid) ->
 		_    -> pretty_string(X0)
 	 end
 	||  X0 <-All],
-	{{Onl,All},Pretty}.
+	Pretty.
+
+%returns tuple of two lists: {onlines,alls}
+users_bare(Pid) ->
+	P=get_pid(Pid),
+	chat_cli:get_users(P).
 
 get_pid(P) ->
 	gen_server:call(P,get_remote_pid).
