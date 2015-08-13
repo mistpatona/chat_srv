@@ -19,10 +19,10 @@ start_link() ->
 	gen_server:start_link(?MODULE, [], []).
 
 stop(Pid) ->
-	gen_server:cast(Pid,stop).
+	gen_server:call(Pid,stop).
 
 notify_message(Conn,From,Body) ->
-	gen_server:cast(Conn,{notify_of_msg,From,Body}).
+	gen_server:call(Conn,{notify_of_msg,From,Body}).
 
 login(Name) -> 
 	{ok,PMy} = ?MODULE:start_link(),
@@ -32,7 +32,6 @@ login(Name) ->
 
 logout(Pid) ->
 	P=get_pid(Pid),
-	%io:format("client logout: local:~p, remote:~p~n",[Pid,P]),
 	Result=chat_cli:logout(P),
 	stop(Pid),
 	Result.
@@ -116,6 +115,13 @@ handle_call( get_remote_pid, _From ,State) ->
 handle_call({set_remote_pid,Pid}, _From, _State) ->
 	{reply,ok,Pid};
 
+handle_call(stop,_From,State) ->
+	{stop,normal,ok,State}; 
+
+handle_call({notify_of_msg,From,Body}, _From, State) ->
+	io:format("~p: ~p~n",[From,Body]),
+    {reply,ok,State};
+
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -132,15 +138,12 @@ handle_call(_Request, _From, State) ->
 	NewState :: term(),
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
-handle_cast({notify_of_msg,From,Body}, State) ->
-	io:format("~p: ~p~n",[From,Body]),
-    {noreply, State};
+%% handle_cast({notify_of_msg,From,Body}, State) ->
+%% 	io:format("~p: ~p~n",[From,Body]),
+%%     {noreply, State};
 
-%% handle_cast({set_remote_pid,Pid},_State) ->
-%% 	{noreply,Pid};
-
-handle_cast(stop,State) ->
-	{stop,normal,State};
+%% handle_cast(stop,State) ->
+%% 	{stop,normal,State};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.

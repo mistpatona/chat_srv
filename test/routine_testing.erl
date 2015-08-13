@@ -4,6 +4,7 @@
 
 -module(routine_testing).
 
+-include("../src/debug_print.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 %% ====================================================================
@@ -11,7 +12,7 @@
 %% ====================================================================
 -export([mailing/0,setup/0,teardown/0]).
 
--export([arabmail/0]).
+-export([arabmail/0,bigmailing/1,biglogins/1]).
 
 setup() ->
 	application:start(chat_srv).
@@ -32,8 +33,7 @@ mailing() ->
 	{Uon,Uall} = chat_client:users_bare(T),
 	?assertEqual(length(Uon),2), % 2 users online
 	?assertEqual(length(Uall),3), % users total
-		H = chat_client:history(V, "tema"),
-	%io:format("bkah-blah!~n"),
+	H = chat_client:history(V, "tema"),
 	chat_client:logout(T),
 
 	UV = chat_client:users(V),
@@ -45,6 +45,33 @@ mailing() ->
 	 
 	%application:stop(chat_srv).
 
+bigmailing(N) ->
+	{ok,T}=chat_client:login("tema"),
+	To = "vova2",
+	[onemail(T,To,K) || K <- lists:seq(1,N) ].
+	
+onemail(Client,To,K) ->	
+	Body = 	io_lib:format("auto mail Number ~b to ~s",[K,To]),				 	
+	chat_client:write(Client,To,Body).
+
+biglogins(N) ->
+	Name = "arab2",
+	{ok,A0}=chat_client:login(Name),
+	?printf("testing ~b logins (of ~s)",[N,Name]),
+	L = [ onelogin(Name) || _K <- lists:seq(1,N) ], 
+	?printf("all logins done",[]),
+	[ onelogout(K) || K <- L ],	
+	?printf("all logouts done",[]),
+	
+	{ok,_Msg_id}=chat_client:write(A0,Name,"test mail to myself"),
+	chat_client:logout(A0).	
+
+onelogin(Name) -> 
+	{ok,A}=chat_client:login(Name),
+	A.
+
+onelogout(Client) ->
+	chat_client:logout(Client).
 
 arab() ->
 	{ok,A}=chat_client:login("arab"),

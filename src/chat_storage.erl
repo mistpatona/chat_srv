@@ -67,7 +67,7 @@ get_tables(P)  ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 init([]) ->
-	io:format("chat_storage: ~w initing database~n",[self()]),
+	io:format("~s: ~w initing database~n",[?MODULE,self()]),
 	Messages = ets:new(?MODULE,[set]),
 	ets:insert(Messages,{lastMid,0}),
     {ok, #state{users 		= ets:new(?MODULE,[set]),
@@ -115,10 +115,7 @@ handle_call({add_message,From,To,Body},_From,State) ->
 					OldMid+1;
 	_ -> erlang:error("No lastMid record found in messages table")
 	end,
-	% only Mid generation is needed to be synchronous (as it must be a transaction);
-	% the rest of adding to DB must relate on database's own concurrency
-	% ets:insert(State#state.messages,{lastMid,Mid}),
-	ets:insert(State#state.messages,{Mid,From,To,Body}), % timestamp not needed, messages can be sorted by message id
+	ets:insert(State#state.messages,{Mid,From,To,Body}), %messages can be sorted by message id
 	ets:insert(State#state.sndrs,{From,Mid}),
 	ets:insert(State#state.rcvrs,{To,Mid}),
 	ets:insert(State#state.users,{From}),
@@ -232,16 +229,11 @@ store_some_msgs_test() ->
 	chat_storage:add_message(P, b, a, "b2a"),
 	chat_storage:add_message(P, a, b, "a2b-2"),
 	chat_storage:add_message(P, b, a, "b2a-2"),
-	%L = chat_storage:get_client_list(P),
-	%?assertEqual([],L -- [a,b]),
 	H = chat_storage:get_history(P, a, b),
 	?assertEqual(length(H),4),
 	Hc = chat_storage:get_history(P, a, c),
 	?assertEqual(Hc,[]),
 	stop(P).
-%% 
-%% arabmail_test()  ->
-%% 	routine_testing:arabmail().
 
 %%--------------------------------------------------------
 

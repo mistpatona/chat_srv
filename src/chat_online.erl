@@ -4,6 +4,7 @@
 
 -module(chat_online).
 -behaviour(gen_server).
+-include("debug_print.hrl").
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 %% ====================================================================
@@ -75,15 +76,17 @@ init([]) ->
 	Reason :: term().
 %% ====================================================================
 handle_call({register,Pid,Login},_From,#state{online=Lonline,all=Sall}=State) ->
-	io:format("chat_online: registering ~p from ~p~n",[Login,Pid]),
+	%io:format("chat_online: registering ~p from ~p~n",[Login,Pid]),
+	?printf("registering ~p from ~p",[Login,Pid]),
 	{reply,ok,State#state{	online= [{Pid,Login}|Lonline],
 							all   = sets:add_element(Login,Sall) 
 				   		}};
 
 handle_call({unregister,Pid},_From,#state{online=L}=State) ->
-	io:format("chat_online: unregistering ~p~n",[Pid]),
-	{reply,ok,State#state{online=
-							 lists:filter(fun({X,_})-> X=/=Pid end,L)
+	%io:format("chat_online: unregistering ~p~n",[Pid]),
+	?printf("unregistering ~p",[Pid]),
+	NewOnline = lists:filter(fun({X,_})-> X=/=Pid end,L),
+	{reply,ok,State#state{online=NewOnline							 
 						}};
 
 handle_call(get_online_list, _From, #state{online=L}=State) ->
@@ -112,16 +115,6 @@ handle_call(_Request, _From, State) ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 
-%% handle_cast({register,Pid,Login},#state{online=Lonline,all=Sall}=State) ->
-%% 	{noreply,State#state{	online= [{Pid,Login}|Lonline],
-%% 							all   = sets:add_element(Login,Sall) 
-%% 				   		}};
-%% 
-%% handle_cast({unregister,Pid},#state{online=L}=State) ->
-%% 	io:format("chat_online: unregistering ~p~n",[Pid]),
-%% 	{noreply,State#state{online=
-%% 							 lists:filter(fun({X,_})-> X=/=Pid end,L)
-%% 						}};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -221,7 +214,14 @@ routine_test() ->
 	
 	routine_testing:mailing(),
 	
-	routine_testing:arabmail().
+	routine_testing:arabmail(),
+	
+	routine_testing:biglogins(100),
+	
+	routine_testing:bigmailing(100). 
+
+	
+
 
 %% ====================================================================
 %% Internal functions for tests

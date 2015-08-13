@@ -4,6 +4,7 @@
 
 -module(chat_cli).
 -behaviour(gen_server).
+-include("debug_print.hrl").
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 %% ====================================================================
@@ -21,9 +22,14 @@ start_link(Conn,Login) ->
 logout(Pid) ->
 	gen_server:call(Pid,logout).
 
+%% notify_old(Pid,From,_To, Body) ->
+%% 	Conn = ( catch get_client(Pid)),
+%% 	if is_pid(Conn) ->
+%% 		chat_client:notify_message(Conn,From,Body)
+%% 	end.
+
 notify(Pid,From,_To, Body) ->
-	Conn = get_client(Pid),
-	chat_client:notify_message(Conn,From,Body).
+	gen_server:cast(Pid,{notify,From,Body}).
 
 send(Pid,To,Body) ->
 	gen_server:call(Pid,{send,To,Body}).
@@ -95,7 +101,7 @@ handle_call({get_history,Friend}, _From, State) ->
 	{reply, R, State};
 
 handle_call(logout, _From, State) ->
-	io:format("chat_cli: logout ~p~n",[State#state.login]),
+	?printf("logout ~p",[State#state.login]),
 	Reply=chat_online:unregister(chat_online, self()),
 	{stop,normal,Reply,State};
 
@@ -120,15 +126,10 @@ handle_call(_Request, _From, State) ->
 	NewState :: term(),
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
-%% handle_cast(logout,State) ->
-%% 	io:format("chat_cli: logout ~p~n",[State#state.login]),
-%% 	chat_online:unregister(chat_online, self()),
-%% 	{stop,normal,State};
-
-%% handle_cast({send,To,Body},State) ->
-%%  	Login = State#state.login,
-%%  	chat_msg_srv:send(Login,To,Body),
-%% 	{noreply, State};
+handle_cast({notify,From,Body}, State) ->
+	Conn = State#state.client,
+	chat_client:notify_message(Conn,From,Body),
+	{noreply, State};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -146,15 +147,15 @@ handle_cast(_Msg, State) ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 handle_info(timeout,#state{reg=no}=State) ->
-	io:format("chat_cli: registering ~p~n",[State#state.login]),
+	?printf("registering ~p",[State#state.login]),
 	%this process wants to know if it's client dies:
 	process_flag(trap_exit, true),
 	link(State#state.client),
 	chat_online:register(chat_online,self(),State#state.login),
 	{noreply, State#state{reg=yes}};
 
-handle_info({'EXIT',FromPid,Reason},State) ->
-	io:format("chat_cli: client process ~p exited: ~p, unregistering ~p~n",[FromPid,Reason,State#state.login]),
+handle_info({'EXIT',_FromPid,_Reason},State) ->
+	?printf("client process ~p exited: ~p, unregistering ~p",[_FromPid,_Reason,State#state.login]),
 	chat_online:unregister(chat_online, self()),
 	{stop,normal,State};
 
@@ -172,7 +173,6 @@ handle_info(_Info, State) ->
 			| term().
 %% ====================================================================
 terminate(_Reason, _State) ->
-	%chat_online:unregister(chat_online,self()),
 	ok.
 
 

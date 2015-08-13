@@ -16,6 +16,7 @@
 start_link() ->
 	gen_server:start_link({local,?MODULE},?MODULE, [], []).
 
+%send message and notify receiver where he is logged in
 send(From,To,Body) ->
 	R=chat_storage:add_message(chat_storage, From, To, Body),
 	Pids = chat_online:get_pids_by_name(chat_online, To),
