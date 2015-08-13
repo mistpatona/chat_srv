@@ -32,7 +32,7 @@ login(Name) ->
 
 logout(Pid) ->
 	P=get_pid(Pid),
-	io:format("client logout: local:~p, remote:~p~n",[Pid,P]),
+	%io:format("client logout: local:~p, remote:~p~n",[Pid,P]),
 	Result=chat_cli:logout(P),
 	stop(Pid),
 	Result.
@@ -70,7 +70,7 @@ get_pid(P) ->
 	gen_server:call(P,get_remote_pid).
 
 set_pid(P,Pid) ->
-	gen_server:cast(P,{set_remote_pid,Pid}).
+	gen_server:call(P,{set_remote_pid,Pid}).
 
 %% ====================================================================
 %% Behavioural functions
@@ -110,9 +110,11 @@ init([]) ->
 	Timeout :: non_neg_integer() | infinity,
 	Reason :: term().
 %% ====================================================================
-handle_call( get_remote_pid,_F,State) ->
+handle_call( get_remote_pid, _From ,State) ->
 	{reply,State,State};
 
+handle_call({set_remote_pid,Pid}, _From, _State) ->
+	{reply,ok,Pid};
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -134,8 +136,8 @@ handle_cast({notify_of_msg,From,Body}, State) ->
 	io:format("~p: ~p~n",[From,Body]),
     {noreply, State};
 
-handle_cast({set_remote_pid,Pid},_State) ->
-	{noreply,Pid};
+%% handle_cast({set_remote_pid,Pid},_State) ->
+%% 	{noreply,Pid};
 
 handle_cast(stop,State) ->
 	{stop,normal,State};

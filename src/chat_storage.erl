@@ -239,6 +239,9 @@ store_some_msgs_test() ->
 	Hc = chat_storage:get_history(P, a, c),
 	?assertEqual(Hc,[]),
 	stop(P).
+%% 
+%% arabmail_test()  ->
+%% 	routine_testing:arabmail().
 
 %%--------------------------------------------------------
 

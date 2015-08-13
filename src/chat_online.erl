@@ -216,6 +216,13 @@ reg_unreg_test() ->
 	?assertEqual(P_no_a,[]),
 	stop(P).
 
+routine_test() ->
+	routine_testing:setup(),
+	
+	routine_testing:mailing(),
+	
+	routine_testing:arabmail().
+
 %% ====================================================================
 %% Internal functions for tests
 %% ====================================================================
