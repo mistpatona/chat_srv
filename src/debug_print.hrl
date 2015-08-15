@@ -1,4 +1,4 @@
--define(debug,yes).
+% -define(debug,yes).
 
 -ifdef(debug).
 -define(print(S), io:format("~s: ~s~n",[?MODULE_STRING,S])).
